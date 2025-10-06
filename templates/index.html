@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NLP Sentiment Analysis</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      color: white;
+      margin-bottom: 40px;
+      animation: fadeInDown 0.8s ease;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+
+    header p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    .main-card {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      margin-bottom: 30px;
+      animation: fadeInUp 0.8s ease;
+    }
+
+    .model-selector {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    .model-option {
+      flex: 1;
+      min-width: 150px;
+      padding: 15px 25px;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.3s ease;
+      background: white;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .model-option:hover {
+      border-color: #667eea;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+    }
+
+    .model-option.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .input-section {
+      margin-bottom: 30px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 600;
+      color: #555;
+      font-size: 1rem;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-family: inherit;
+      resize: vertical;
+      transition: all 0.3s ease;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+
+    .btn-predict {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-predict:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-predict:active {
+      transform: translateY(0);
+    }
+
+    .btn-predict:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    #result {
+      margin-top: 30px;
+      padding: 25px;
+      border-radius: 12px;
+      animation: fadeIn 0.5s ease;
+      display: none;
+    }
+
+    #result.show {
+      display: block;
+    }
+
+    #result.positive {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      color: white;
+    }
+
+    #result.negative {
+      background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+      color: white;
+    }
+
+    #result.loading {
+      background: #f5f5f5;
+      color: #666;
+      text-align: center;
+    }
+
+    .result-content {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .result-icon {
+      font-size: 3rem;
+    }
+
+    .result-info h3 {
+      font-size: 1.5rem;
+      margin-bottom: 8px;
+    }
+
+    .result-info p {
+      font-size: 1.1rem;
+      opacity: 0.95;
+    }
+
+    .confidence-bar {
+      margin-top: 15px;
+      background: rgba(255,255,255,0.3);
+      height: 10px;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .confidence-fill {
+      height: 100%;
+      background: white;
+      transition: width 0.8s ease;
+      border-radius: 5px;
+    }
+
+    .charts-section {
+      margin-top: 50px;
+      animation: fadeInUp 0.8s ease 0.2s both;
+    }
+
+    .charts-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+
+    .charts-header h2 {
+      color: white;
+      font-size: 1.8rem;
+    }
+
+    .btn-refresh {
+      padding: 10px 20px;
+      background: white;
+      color: #667eea;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    .btn-refresh:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 30px;
+    }
+
+    .chart-card {
+      background: white;
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .chart-card h3 {
+      margin-bottom: 15px;
+      color: #555;
+      font-size: 1.3rem;
+    }
+
+    .chart-card img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      display: block;
+    }
+
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    .spinner {
+      border: 3px solid rgba(0,0,0,0.1);
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 2rem;
+      }
+
+      .main-card {
+        padding: 25px;
+      }
+
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .result-content {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🧠 Phân Tích Cảm Xúc AI</h1>
+      <p>Sử dụng Deep Learning để phân tích cảm xúc văn bản tiếng Việt</p>
+    </header>
+
+    <div class="main-card">
+      <div class="input-section">
+        <label>Chọn mô hình:</label>
+        <div class="model-selector">
+          <div class="model-option active" data-model="lstm">
+            📊 LSTM Model
+          </div>
+          <div class="model-option" data-model="rnn">
+            🔄 RNN Model
+          </div>
+        </div>
+      </div>
+
+      <div class="input-section">
+        <label for="input_text">Nhập văn bản cần phân tích:</label>
+        <textarea 
+          id="input_text" 
+          placeholder="Ví dụ: Sản phẩm này thật tuyệt vời, tôi rất hài lòng với chất lượng..."
+        ></textarea>
+      </div>
+
+      <button class="btn-predict" onclick="sendPrediction()">
+        Phân Tích Cảm Xúc
+      </button>
+
+      <div id="result"></div>
+    </div>
+
+    <div class="charts-section">
+      <div class="charts-header">
+        <h2>📈 Lịch Sử Huấn Luyện</h2>
+        <button class="btn-refresh" onclick="updatePlots()">
+          🔄 Cập nhật
+        </button>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>Loss Curve</h3>
+          <img id="loss_plot" src="" alt="Loss curve" />
+        </div>
+        <div class="chart-card">
+          <h3>Accuracy Curve</h3>
+          <img id="acc_plot" src="" alt="Accuracy curve" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let selectedModel = 'lstm';
+
+    // Model selector
+    document.querySelectorAll('.model-option').forEach(option => {
+      option.addEventListener('click', function() {
+        document.querySelectorAll('.model-option').forEach(opt => 
+          opt.classList.remove('active')
+        );
+        this.classList.add('active');
+        selectedModel = this.dataset.model;
+        updatePlots();
+      });
+    });
+
+    async function sendPrediction() {
+      const text = document.getElementById("input_text").value.trim();
+      const resultDiv = document.getElementById("result");
+      const btn = document.querySelector('.btn-predict');
+
+      if (!text) {
+        resultDiv.className = "show negative";
+        resultDiv.innerHTML = `
+          <div class="result-content">
+            <div class="result-icon">⚠️</div>
+            <div class="result-info">
+              <h3>Lỗi</h3>
+              <p>Vui lòng nhập nội dung cần phân tích!</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      // Loading state
+      btn.disabled = true;
+      btn.textContent = "Đang phân tích...";
+      resultDiv.className = "show loading";
+      resultDiv.innerHTML = '<div class="spinner"></div><p style="margin-top: 15px;">Đang xử lý...</p>';
+
+      try {
+        const response = await fetch(`/predict/${selectedModel}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || data.error) {
+          throw new Error(data.error || "Lỗi không xác định!");
+        }
+
+        const isPositive = data.prediction === 1;
+        const confidence = (data.confidence * 100).toFixed(1);
+        
+        resultDiv.className = `show ${isPositive ? 'positive' : 'negative'}`;
+        resultDiv.innerHTML = `
+          <div class="result-content">
+            <div class="result-icon">${isPositive ? '😃' : '😞'}</div>
+            <div class="result-info">
+              <h3>${isPositive ? 'Tích Cực' : 'Tiêu Cực'}</h3>
+              <p>Độ tin cậy: ${confidence}%</p>
+              <div class="confidence-bar">
+                <div class="confidence-fill" style="width: ${confidence}%"></div>
+              </div>
+            </div>
+          </div>
+        `;
+
+      } catch (err) {
+        resultDiv.className = "show negative";
+        resultDiv.innerHTML = `
+          <div class="result-content">
+            <div class="result-icon">❌</div>
+            <div class="result-info">
+              <h3>Lỗi kết nối</h3>
+              <p>Không thể kết nối đến server. Vui lòng thử lại!</p>
+            </div>
+          </div>
+        `;
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Phân Tích Cảm Xúc";
+      }
+    }
+
+    async function updatePlots() {
+      for (const metric of ["loss", "acc"]) {
+        try {
+          const res = await fetch(`/train_plot/${metric}?model=${encodeURIComponent(selectedModel)}`);
+          const data = await res.json();
+
+          if (data.image_url) {
+            document.getElementById(`${metric}_plot`).src = data.image_url + `?t=${Date.now()}`;
+          }
+        } catch (e) {
+          console.error(`Không tải được biểu đồ ${metric}:`, e);
+        }
+      }
+    }
+
+    // Enter to submit
+    document.getElementById('input_text').addEventListener('keydown', function(e) {
+      if (e.ctrlKey && e.key === 'Enter') {
+        sendPrediction();
+      }
+    });
+
+    // Load charts on page load
+    window.addEventListener("load", updatePlots);
+  </script>
+</body>
+</html>

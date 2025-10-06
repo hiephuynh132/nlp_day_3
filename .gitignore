@@ -1,0 +1,5 @@
+*.pt
+downloads
+.vector_cache
+*.pyc
+__pycache__
