@@ -7,6 +7,8 @@ else:
     url = "https://drive.google.com/drive/folders/1x29Nfs2a6JtLrjs0StlC6m5C_5f_dWwv"
     gdown.download_folder(url, output="downloads", quiet=False)
 
+os.makedirs("models", exist_ok=True)
+
 if os.path.exists("models/best_model_lstm.pt"):
     print("best_model_lstm.pt is exists")
 else:
